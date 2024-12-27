@@ -18,26 +18,29 @@
 
         .sudoku-container {
             display: grid;
-            grid-template-columns: repeat(3, auto);
+            grid-template-columns: repeat(3, 1fr);
             gap: 4px;
             background-color: black;
             padding: 4px;
+            max-width: 90vw; /* Restrict to 90% of the viewport width */
+            max-height: 90vh; /* Restrict to 90% of the viewport height */
         }
 
         .sub-sudoku {
             display: grid;
-            grid-template-columns: repeat(3, 30px);
-            grid-template-rows: repeat(3, 30px);
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
             gap: 2px;
             background-color: white;
-            padding: 4px;
+            padding: 0%;
+            aspect-ratio: 1 / 1; /* Maintain a square aspect ratio */
         }
 
         .sub-sudoku input {
             width: 28px;
             height: 28px;
             text-align: center;
-            font-size: 16px;
+            font-size: 20px;
             border: 1px solid #ccc;
             outline: none;
         }
