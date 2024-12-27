@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Grid</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <style>
+        body {
+            /* display: flex; */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .sudoku-container {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 4px;
+            background-color: black;
+            padding: 4px;
+        }
+
+        .sub-sudoku {
+            display: grid;
+            grid-template-columns: repeat(3, 30px);
+            grid-template-rows: repeat(3, 30px);
+            gap: 2px;
+            background-color: white;
+            padding: 4px;
+        }
+
+        .sub-sudoku input {
+            width: 28px;
+            height: 28px;
+            text-align: center;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        .highlighted {
+            background-color: yellow; /* Highlight color */
+            transition: background-color 0.3s ease; /* Smooth transition for highlighting */
+        }
+
+        .input-wrapper input:disabled {
+            pointer-events: none; /* Ensure clicks pass through the input */
+        }
+
+        input {
+            pointer-events: auto;
+        }
+
+        .sub-sudoku input:focus {
+            border-color: #007bff;
+        }
+
+        .given {
+            background-color: #ddd;
+            font-weight: bold;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center; /* Center buttons horizontally */
+            width: 100%; /* Take up the full horizontal space */
+            margin-top: 0px; /* Add spacing above the buttons */
+            margin-bottom: 10px;
+        }
+
+        .big-button {
+            margin: 5px; /* Add spacing between buttons */
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #e0e0e0;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column; /* Stack the Sudoku container and buttons vertically */
+            align-items: center; /* Center everything horizontally */
+            gap: 20px; /* Add space between the Sudoku container and the buttons */
+        }
+
+        #incorrect-attempts, #timer, #score, #tips-button {
+            margin: 10px;
+            font-size: 18px;
+        }
+
+        .number-selector {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .number-button { /* Highlight number buttons */
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            margin: 5px;
+            background-color: #f4f4f9;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .number-button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: center">
+        <h1>Sudoku Showdown</h1>
+        <div id="score"></div>
+        <div id="timer">Time: 0s</div>
+        <div id="incorrect-attempts">Mistakes: 0</div>
+    </div>
+    <div class="main-container">
+        <div class="sudoku-container">
+            <!-- 9 Sub Sudoku Containers -->
+            <div class="sub-sudoku" id="sub-sudoku-0"></div>
+            <div class="sub-sudoku" id="sub-sudoku-1"></div>
+            <div class="sub-sudoku" id="sub-sudoku-2"></div>
+            <div class="sub-sudoku" id="sub-sudoku-3"></div>
+            <div class="sub-sudoku" id="sub-sudoku-4"></div>
+            <div class="sub-sudoku" id="sub-sudoku-5"></div>
+            <div class="sub-sudoku" id="sub-sudoku-6"></div>
+            <div class="sub-sudoku" id="sub-sudoku-7"></div>
+            <div class="sub-sudoku" id="sub-sudoku-8"></div>
+        </div>
+
+        <p style="margin: 0px; padding: 0px">Select a Number to Fill the Cell</p>
+        
+        <div class="button-container">
+            <div class="number-selector"></div>
+                <div id="tips-button"> </div>
+                <button class="number-button" data-number="1">1</button>
+                <button class="number-button" data-number="2">2</button>
+                <button class="number-button" data-number="3">3</button>
+                <button class="number-button" data-number="4">4</button>
+                <button class="number-button" data-number="5">5</button>
+                <button class="number-button" data-number="6">6</button>
+                <button class="number-button" data-number="7">7</button>
+                <button class="number-button" data-number="8">8</button>
+                <button class="number-button" data-number="9">9</button>
+            </div>
+            </div>
+        <div class="button-container">
+            <!-- <button id="draft-button">Draft</button> -->
+            <button class="big-button" id="hint-button">Hint</button>
+            <button class="big-button" id="restart-button">Restart</button>
+        </div>
+    </div>
+    <script>
+        let maxHints = 10;
+        let hintCount = 0;
+        let incorrectAttempts = 0;
+        let timeElapsed = 0;
+        let timer;
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timeElapsed = 0;
+            document.getElementById('timer').innerText = `Time: ${timeElapsed}s`;
+            timer = setInterval(() => {
+                timeElapsed++;
+                document.getElementById('timer').innerText = `Time: ${timeElapsed}s`;
+            }, 1000);
+        }
+
+        function checkCompletion() {
+            // const cells = document.querySelectorAll(".testtest");
+            const cells = document.querySelectorAll(`input[unique='0']`);
+            const solution = basePuzzles[currentPuzzleIndex].solution;
+
+            // Verify if all cells are filled correctly
+            const isComplete = Array.from(cells).every((cell) => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                console.log("uh", cell.value == solution[row][col]);
+                return cell.value == solution[row][col];
+            })
+
+            if (isComplete) {
+                // Stop the timer
+                clearInterval(timer);
+
+                // Calculate the score
+                const baseScore = 10000;
+                const timePenalty = timeElapsed; // 1 point deducted per second
+                const incorrectPenalty = Math.min(incorrectAttempts, 10) * 100; // 10 points deducted per incorrect attempt up to 10 attempts
+                const hintPenalty = hintCount * 500; // 500 points deducted per hint used
+
+                const finalScore = Math.max(baseScore - timePenalty - incorrectPenalty - hintPenalty, 1);
+                document.getElementById('timer').innerText = ` `;
+                document.getElementById('incorrect-attempts').innerText = ` `;
+                // Display completion message and score
+                const scoreDisplay = document.getElementById("score");
+                scoreDisplay.innerText = `🎉 Puzzle Complete! Score: ${finalScore}
+                Time: ${timeElapsed}s, Mistakes: ${incorrectAttempts}, Hints: ${hintCount}`;
+
+                // Optionally disable further input
+                cells.forEach(cell => cell.disabled = true);
+            }
+        }
+
+function getInputElement(row, col) {
+    return document.querySelector(`input[data-row='${row}'][data-col='${col}']`);
+}
+
+        function updateFocusing() {
+            const inputs = document.querySelectorAll('.sudoku-container input');
+
+            inputs.forEach(input => {
+                if (parseInt(input.dataset.row) === currentFocusedRow && parseInt(input.dataset.col) === currentFocusedCol) {
+                    input.style.backgroundColor = 'lightblue'; 
+                } else {
+                    input.style.backgroundColor = '';
+                }
+            });
+
+        }
+
+        function updateHighlighting() {
+            const inputs = document.querySelectorAll('.sudoku-container input');
+
+            inputs.forEach(input => {
+                const cellValue = input.value;
+
+                if (isHighlighting && cellValue == lastHighlighted && cellValue !== '') {
+                    input.classList.add('highlighted'); // Add highlighting class
+                } else {
+                    input.classList.remove('highlighted'); // Remove highlighting class
+                }
+            });
+        }
+
+        function generateSudoku() {
+            const board = Array.from({ length: 9 }, () => Array(9).fill(''));
+
+            function isValid(board, row, col, num) {
+                for (let i = 0; i < 9; i++) {
+                    if (board[row][i] == num || board[i][col] == num ||
+                        board[Math.floor(row / 3) * 3 + Math.floor(i / 3)][Math.floor(col / 3) * 3 + i % 3] == num) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+        // Create a seeded random generator
+            function createSeededRandom(seed) {
+                let s = seed % 2147483647;
+                if (s <= 0) s += 2147483646;
+
+                return function() {
+                    s = (s * 16807) % 2147483647;
+                    return (s - 1) / 2147483646;
+                };
+            }
+
+            const now = new Date();
+            //special seed based on date
+            //let myseed = now.getHours() * 60 + now.getMinutes();
+            let myseed = now.getDay();
+            const seededRandom = createSeededRandom(myseed);
+
+            //How it works
+            console.log(seededRandom()); // Random number between 0 and 1
+            console.log(seededRandom()); // Next random number
+            console.log(seededRandom()); // Next random number
+
+            function fillBoard(board) {
+                for (let row = 0; row < 9; row++) {
+                    for (let col = 0; col < 9; col++) {
+                        if (board[row][col] === '') {
+                            for (let num = 1; num <= 9; num++) {
+                                const randomNum = Math.floor(seededRandom() * 9) + 1;
+                                if (isValid(board, row, col, randomNum)) {
+                                    board[row][col] = randomNum;
+                                    if (fillBoard(board)) return true;
+                                    board[row][col] = '';
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            fillBoard(board);
+
+            const puzzle = board.map(row => row.slice());
+            const numCellsToRemove = 45;
+            for (let i = 0; i < numCellsToRemove; i++) {
+                const row = Math.floor(seededRandom() * 9);
+                const col = Math.floor(seededRandom() * 9);
+                puzzle[row][col] = '';
+            }
+
+            return { puzzle, solution: board };
+        }
+
+        let lastHighlighted = -1;
+        let isHighlighting = false;
+
+        let currentFocusedRow = -1;
+        let currentFocusedCol = -1;
+
+        updateFocusing();
+
+        const basePuzzles = Array.from({ length: 100 }, generateSudoku);
+
+        let currentPuzzleIndex = Math.floor(Math.random() * basePuzzles.length);
+
+        // Populate each sub-Sudoku container with inputs
+        const sudokuContainer = document.querySelector('.sudoku-container');
+        const subSudokus = document.querySelectorAll('.sub-sudoku');
+
+        const puzzle = basePuzzles[currentPuzzleIndex].puzzle;
+
+        subSudokus.forEach((subSudoku, subIndex) => {
+            for (let i = 0; i < 9; i++) {
+                const row = Math.floor(subIndex / 3) * 3 + Math.floor(i / 3);
+                const col = (subIndex % 3) * 3 + (i % 3);
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = puzzle[row][col] || ''; // Use the puzzle value if empty
+                input.disabled = !!puzzle[row][col];
+                input.maxLength = '1';
+                input.setAttribute("unique", 0);
+                input.setAttribute('data-row', row);
+                input.setAttribute('data-col', col);
+
+                input.addEventListener('input', handleInput);
+                input.addEventListener('focus', () => highlightCell(input)); // Add highlight on focus
+                input.addEventListener('blur', () => removeHighlight(input)); // Remove highlight on blur
+
+                // Create a wrapper div
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('input-wrapper'); // Optional: Add a class for styling or identification
+
+                // Add the input as a child of the wrapper
+                wrapper.appendChild(input);
+
+                // Add a click event to the wrapper
+                wrapper.addEventListener('click', (e) => {
+                    handleClick(row, col);
+                    console.log("Wrapper clicked");
+                    e.stopPropagation(); // Prevent the click event from bubbling to other elements
+                });
+
+                // Append the wrapper to the parent container
+                subSudoku.appendChild(wrapper);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            //renderPuzzle(currentPuzzleIndex);
+
+            document.getElementById('hint-button').addEventListener('click', giveHint);
+            document.getElementById('restart-button').addEventListener('click', () => location.reload());
+
+            
+            const numberButtons = document.getElementsByClassName('number-button');
+            
+            for (const numberButton of numberButtons) {
+                numberButton.addEventListener('click', () => {
+                    //const highlightedInput = document.querySelector('.highlighted');
+                    if (currentFocusedRow === -1) {
+                        return;
+                    }
+                    const inputElement = getInputElement(currentFocusedRow, currentFocusedCol);
+                    inputElement.value = numberButton.dataset.number;
+                    const inputEvent = new Event('input', { bubbles: true });
+                    inputElement.dispatchEvent(inputEvent);
+                    console.log(parseInt(numberButton.dataset.number))
+                });
+            }
+            startTimer();
+        });
+
+        function handleClick(row, col) {
+            const inputElement = getInputElement(row, col);
+            let value = inputElement.value;
+
+            //console.log('clicked', value)
+            if (lastHighlighted == value) {
+                isHighlighting = !isHighlighting;
+            } else {
+                isHighlighting = true;
+            }
+            lastHighlighted = value;
+
+            // go off and highlight / unhighlight as necessary
+            updateHighlighting();
+
+            console.log('lastHighlighted', lastHighlighted);
+            console.log('isHighlighting', isHighlighting);
+        }
+        
+        // Highlight the currently focused cell
+        function highlightCell(input) {
+            console.log('lol hi')
+            input.classList.add('highlighted');
+            currentFocusedRow = parseInt(input.dataset.row);
+            currentFocusedCol = parseInt(input.dataset.col);
+            updateFocusing();
+            //input.style.backgroundColor = 'lightblue'; 
+            console.log(currentFocusedRow, currentFocusedCol)
+        }
+
+        // Remove highlight from a cell when focus is lost
+        function removeHighlight(input) {
+            console.log('remove highlight')
+            input.classList.remove('highlighted');
+        }
+
+        let isDraftMode = false;
+
+        function handleInput(event) {
+            const input = event.target;
+            const row = parseInt(input.dataset.row);
+            const col = parseInt(input.dataset.col);
+            const value = input.value.trim();
+            const correctValue = basePuzzles[currentPuzzleIndex].solution[row][col];
+
+            // Ensure the input container can store draft values
+            if (!input.dataset.draft) input.dataset.draft = ""; // Initialize draft mode data
+
+            if (isDraftMode) {
+                input.style.color = "blue"; // Draft mode inputs are blue
+                if (/^\d$/.test(value)) {
+                    const currentDraft = input.dataset.draft.split("").filter(v => v !== "");
+                    if (!currentDraft.includes(value) && currentDraft.length < 3) {
+                        currentDraft.push(value); // Add the draft value
+                        input.dataset.draft = currentDraft.join(""); // Update draft data
+                        input.value = currentDraft.join(""); // Display draft numbers in the cell
+                    }
+                }
+            } else {
+                // Validate input is a single digit from 1-9
+                if (!/^\d$/.test(value)) {
+                    input.value = ""; // Clear invalid inputs
+                    return;
+                }
+
+                if (parseInt(value) === correctValue) {
+                    input.style.color = "#008000"; // Correct input turns green
+                    input.disabled = true; // Lock correct input
+                    //input.dataset.draft = ""; // Clear any draft data
+                    currentFocusedRow = -1;
+                    currentFocusedCol = -1;
+                    checkCompletion(); // Check if the puzzle is completed
+                } else {
+                    input.value = "X"; // Clear incorrect value
+                    incorrectAttempts++; // Increment incorrect attempt count
+                    document.getElementById('incorrect-attempts').innerText = `Mistakes: ${incorrectAttempts}`;
+                }
+            }
+        }
+
+        function giveHint() {
+            const puzzle = basePuzzles[currentPuzzleIndex].puzzle;
+            const solution = basePuzzles[currentPuzzleIndex].solution;
+
+            // Get the current state of the board
+            const inputs = document.querySelectorAll('input');
+            let emptyCells = [];
+
+            inputs.forEach(input => {
+                const row = parseInt(input.dataset.row);
+                const col = parseInt(input.dataset.col);
+
+                // Check if the cell is empty and not pre-filled
+                if (!input.value && puzzle[row][col] === '') {
+                    emptyCells.push({ row, col });
+                }
+            });
+
+            if (emptyCells.length > 0 && hintCount < maxHints) {
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                const hintValue = solution[randomCell.row][randomCell.col];
+                const targetInput = Array.from(inputs).find(
+                    input => input.dataset.row == randomCell.row && input.dataset.col == randomCell.col
+                );
+
+                if (targetInput) {
+                    targetInput.value = hintValue;
+                    targetInput.disabled = true; // Lock the hint in place
+                    targetInput.classList.add("given"); // Optional: visually mark as a given cell
+                }
+
+                hintCount++;
+                checkCompletion();
+                document.getElementById('hint-button').innerText = `Hint (${maxHints - hintCount})`; // Update hint count
+
+                if (hintCount >= maxHints) {
+                    document.getElementById('hint-button').disabled = true; // Disable the button after reaching maxHints
+                }
+            }
+        }
+    </script>
+</body>
+</html>
