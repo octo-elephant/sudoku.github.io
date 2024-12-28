@@ -147,7 +147,7 @@
     </style>
 </head>
 <body>
-    <div style="text-align: center; font-family: 'Arial', sans-serif; color: white; background: linear-gradient(45deg, #2a3d66, #3a5f82); padding: 20px 0; width: 100%; box-sizing: border-box;">
+    <div id="top-div" style="text-align: center; font-family: 'Arial', sans-serif; color: white; background: linear-gradient(45deg, #2a3d66, #3a5f82); padding: 20px 0; width: 100%; box-sizing: border-box;">
         <h1 style="font-size: 60px; font-weight: bold; text-transform: uppercase; letter-spacing: 4px; color: #ffcc00; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); margin: 0;">Gridle</h1>
         <h2 style="font-size: 28px; font-weight: normal; color: #ffcc00; text-shadow: 1.5px 1.5px 3px rgba(0,0,0,0.4); margin: 8px 0 15px 0;">Your Daily Sudoku Showdown</h2>
         <div id="score" style="font-size: 18px; color: #f1f1f1; margin-bottom: 4px;"> </div>
@@ -276,6 +276,42 @@
                     cell.disabled = true
                     cell.dataset.disabled = true;
                 });
+
+                // Get the reference to the specific child element
+                const specificElement = document.getElementById("top-div");
+
+                // Get the parent of the specific element, in this case <body>
+                const parent = document.body;
+
+                // Number of <br> elements you want to add
+                const numberOfBrs = 500;
+
+                const textDisplayElement = document.createElement("p");
+
+                // Set the text content
+                textDisplayElement.textContent = "Screenshot your score and send to family and friends!";
+
+                // Set the styles exactly as specified
+                textDisplayElement.style.textAlign = "center";
+                textDisplayElement.style.color = "rgb(62,86,120)";
+                textDisplayElement.style.fontSize = "20px";
+                textDisplayElement.style.margin = "20px";
+
+                // Create and insert the <br> elements
+                for (let i = 0; i < 200; i++) {
+                    const br = document.createElement("br");
+                    // Insert the <br> after the specific element
+                    parent.insertBefore(br, specificElement.nextSibling);
+                }
+
+                parent.insertBefore(textDisplayElement, specificElement.nextSibling);
+
+                // Create and insert the <br> elements
+                for (let i = 0; i < 10; i++) {
+                    const br = document.createElement("br");
+                    // Insert the <br> after the specific element
+                    parent.insertBefore(br, specificElement.nextSibling);
+                }
             }
         }
 
