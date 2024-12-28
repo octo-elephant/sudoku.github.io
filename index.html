@@ -114,7 +114,17 @@
             background-color: #f4f4f9;
             border: 1px solid #ccc;
             cursor: pointer;
+            color: black;
             transition: background-color 0.3s;
+        }
+
+        @media (min-width: 768px) { /* For tablets and larger devices */
+            .number-button {
+                width: 40px; /* Fixed size for larger screens */
+                height: 40px;
+                font-size: 18px;
+                margin: 5px;
+            }
         }
 
         .number-button:hover {
