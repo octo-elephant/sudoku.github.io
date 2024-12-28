@@ -233,7 +233,10 @@
                 Time: ${timeElapsed}s, Mistakes: ${incorrectAttempts}, Hints: ${hintCount}`;
 
                 // Optionally disable further input
-                cells.forEach(cell => cell.disabled = true);
+                cells.forEach(cell => {
+                    cell.disabled = true
+                    cell.dataset.disabled = true;
+                });
             }
         }
 
@@ -360,15 +363,14 @@ function getInputElement(row, col) {
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.value = puzzle[row][col] || ''; // Use the puzzle value if empty
-                input.disabled = !!puzzle[row][col];
+                input.disabled = true;//!!puzzle[row][col];
                 input.maxLength = '1';
                 input.setAttribute("unique", 0);
+                input.setAttribute("data-disabled", !!puzzle[row][col]);
                 input.setAttribute('data-row', row);
                 input.setAttribute('data-col', col);
 
                 input.addEventListener('input', handleInput);
-                input.addEventListener('focus', () => highlightCell(input)); // Add highlight on focus
-                input.addEventListener('blur', () => removeHighlight(input)); // Remove highlight on blur
 
                 // Create a wrapper div
                 const wrapper = document.createElement('div');
@@ -425,29 +427,21 @@ function getInputElement(row, col) {
                 isHighlighting = true;
             }
             lastHighlighted = value;
+            console.log(inputElement);
+
+            if (inputElement.dataset.disabled === "false") {
+                console.log(inputElement)
+                console.log('not disabled, updating')
+                currentFocusedRow = row;
+                currentFocusedCol = col;
+                updateFocusing();
+            }
 
             // go off and highlight / unhighlight as necessary
             updateHighlighting();
 
             console.log('lastHighlighted', lastHighlighted);
             console.log('isHighlighting', isHighlighting);
-        }
-        
-        // Highlight the currently focused cell
-        function highlightCell(input) {
-            console.log('lol hi')
-            input.classList.add('highlighted');
-            currentFocusedRow = parseInt(input.dataset.row);
-            currentFocusedCol = parseInt(input.dataset.col);
-            updateFocusing();
-            //input.style.backgroundColor = 'lightblue'; 
-            console.log(currentFocusedRow, currentFocusedCol)
-        }
-
-        // Remove highlight from a cell when focus is lost
-        function removeHighlight(input) {
-            console.log('remove highlight')
-            input.classList.remove('highlighted');
         }
 
         let isDraftMode = false;
@@ -462,35 +456,24 @@ function getInputElement(row, col) {
             // Ensure the input container can store draft values
             if (!input.dataset.draft) input.dataset.draft = ""; // Initialize draft mode data
 
-            if (isDraftMode) {
-                input.style.color = "blue"; // Draft mode inputs are blue
-                if (/^\d$/.test(value)) {
-                    const currentDraft = input.dataset.draft.split("").filter(v => v !== "");
-                    if (!currentDraft.includes(value) && currentDraft.length < 3) {
-                        currentDraft.push(value); // Add the draft value
-                        input.dataset.draft = currentDraft.join(""); // Update draft data
-                        input.value = currentDraft.join(""); // Display draft numbers in the cell
-                    }
-                }
-            } else {
-                // Validate input is a single digit from 1-9
-                if (!/^\d$/.test(value)) {
-                    input.value = ""; // Clear invalid inputs
-                    return;
-                }
+            // Validate input is a single digit from 1-9
+            if (!/^\d$/.test(value)) {
+                input.value = ""; // Clear invalid inputs
+                return;
+            }
 
-                if (parseInt(value) === correctValue) {
-                    input.style.color = "#008000"; // Correct input turns green
-                    input.disabled = true; // Lock correct input
-                    //input.dataset.draft = ""; // Clear any draft data
-                    currentFocusedRow = -1;
-                    currentFocusedCol = -1;
-                    checkCompletion(); // Check if the puzzle is completed
-                } else {
-                    input.value = "X"; // Clear incorrect value
-                    incorrectAttempts++; // Increment incorrect attempt count
-                    document.getElementById('incorrect-attempts').innerText = `Mistakes: ${incorrectAttempts}`;
-                }
+            if (parseInt(value) === correctValue) {
+                input.style.color = "#008000"; // Correct input turns green
+                input.disabled = true; // Lock correct input
+                input.dataset.disabled = true;
+                //input.dataset.draft = ""; // Clear any draft data
+                currentFocusedRow = -1;
+                currentFocusedCol = -1;
+                checkCompletion(); // Check if the puzzle is completed
+            } else {
+                input.value = "X"; // Clear incorrect value
+                incorrectAttempts++; // Increment incorrect attempt count
+                document.getElementById('incorrect-attempts').innerText = `Mistakes: ${incorrectAttempts}`;
             }
         }
 
@@ -522,6 +505,7 @@ function getInputElement(row, col) {
                 if (targetInput) {
                     targetInput.value = hintValue;
                     targetInput.disabled = true; // Lock the hint in place
+                    targetInput.dataset.disabled = true;
                     targetInput.classList.add("given"); // Optional: visually mark as a given cell
                 }
 
@@ -531,6 +515,7 @@ function getInputElement(row, col) {
 
                 if (hintCount >= maxHints) {
                     document.getElementById('hint-button').disabled = true; // Disable the button after reaching maxHints
+                    document.getElementById('hint-button').dataset.disabled = true; // Disable the button after reaching maxHints
                 }
             }
         }
