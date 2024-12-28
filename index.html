@@ -232,13 +232,34 @@
                 const incorrectPenalty = Math.min(incorrectAttempts, 10) * 100; // 10 points deducted per incorrect attempt up to 10 attempts
                 const hintPenalty = hintCount * 500; // 500 points deducted per hint used
 
-                const finalScore = Math.max(baseScore - timePenalty - incorrectPenalty - hintPenalty, 1);
+                let bonuses = 0;
+                if (hintCount === 0 && incorrectAttempts <= 1) {
+                    bonuses += 700;
+                }
+
+                if (incorrectAttempts <= 5) {
+                    bonuses += 700;
+                }
+
+                if (timePenalty <= 600) {
+                    bonuses += 700;
+                }
+
+                const finalScore = Math.max(baseScore - timePenalty - incorrectPenalty - hintPenalty + bonuses, 1);
                 document.getElementById('timer').innerText = ` `;
                 document.getElementById('incorrect-attempts').innerText = ` `;
                 // Display completion message and score
+
+                // Convert timeElapsed (in seconds) to minutes and seconds
+                const minutes = Math.floor(timeElapsed / 60);
+                const seconds = timeElapsed % 60;
+
+                // Format seconds to always be two digits (e.g., 01, 09, 59)
+                const formattedSeconds = seconds.toString().padStart(2, '0');
+
                 const scoreDisplay = document.getElementById("score");
                 scoreDisplay.innerText = `🎉 Puzzle Complete! Score: ${finalScore}
-                Time: ${timeElapsed}s, Mistakes: ${incorrectAttempts}, Hints: ${hintCount}`;
+                Time: ${minutes}:${formattedSeconds}, Mistakes: ${incorrectAttempts}, Hints: ${hintCount}`;
 
                 // Optionally disable further input
                 cells.forEach(cell => {
