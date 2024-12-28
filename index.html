@@ -50,6 +50,14 @@
             transition: background-color 0.3s ease; /* Smooth transition for highlighting */
         }
 
+        .focused {
+            background-color: lightblue; /* Highlight color */
+        }
+
+        .focused.highlighted {
+            background-color: #ffcc00;
+        }
+
         .input-wrapper input:disabled {
             pointer-events: none; /* Ensure clicks pass through the input */
         }
@@ -249,9 +257,9 @@ function getInputElement(row, col) {
 
             inputs.forEach(input => {
                 if (parseInt(input.dataset.row) === currentFocusedRow && parseInt(input.dataset.col) === currentFocusedCol) {
-                    input.style.backgroundColor = 'lightblue'; 
+                    input.classList.add('focused'); // Add highlighting class
                 } else {
-                    input.style.backgroundColor = '';
+                    input.classList.remove('focused'); // Remove highlighting class
                 }
             });
 
