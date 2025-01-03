@@ -267,8 +267,11 @@
                 // Format seconds to always be two digits (e.g., 01, 09, 59)
                 const formattedSeconds = seconds.toString().padStart(2, '0');
 
+                const today = new Date();
+                const formattedDate = today.toLocaleDateString();
+
                 const scoreDisplay = document.getElementById("score");
-                scoreDisplay.innerText = `🎉 Puzzle Complete! Score: ${finalScore}
+                scoreDisplay.innerText = `🎉 ${formattedDate} Puzzle Complete! Score: ${finalScore}
                 Time: ${minutes}:${formattedSeconds}, Mistakes: ${incorrectAttempts}, Hints: ${hintCount}`;
 
                 // Optionally disable further input
