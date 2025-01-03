@@ -406,7 +406,7 @@ function getInputElement(row, col) {
             fillBoard(board);
 
             const puzzle = board.map(row => row.slice());
-            const numCellsToRemove = 45;
+            const numCellsToRemove = 48; // blanks
             for (let i = 0; i < numCellsToRemove; i++) {
                 const row = Math.floor(seededRandom() * 9);
                 const col = Math.floor(seededRandom() * 9);
